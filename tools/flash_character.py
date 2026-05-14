@@ -1,41 +1,108 @@
 #!/usr/bin/env python3
 """
-Flash a prepped character pack via USB (pio run -t uploadfs).
-Faster than the BLE drop target when you're iterating on a character.
+Flash a prepped character pack via USB.
+
+Workflow:
+1. Validate character pack
+2. Clear local data/characters staging area
+3. Copy selected character into data/
+4. Erase device flash
+5. Upload LittleFS image
 
 Usage:
-  python3 tools/flash_character.py characters/bufo
+    python3 tools/flash_character.py characters/bufo
 """
-import json, sys, shutil, subprocess
+
+import json
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parent.parent
-DATA    = PROJECT / "data" / "characters"
-CAP     = 1_800_000
+DATA_DIR = PROJECT / "data" / "characters"
+
+LITTLEFS_CAP = 1_800_000
+
+
+def run(cmd: list[str]) -> None:
+    print(f"\n> {' '.join(cmd)}")
+    subprocess.run(cmd, cwd=PROJECT, check=True)
+
+
+def get_manifest(src: Path) -> dict:
+    manifest_path = src / "manifest.json"
+
+    if not manifest_path.exists():
+        sys.exit(
+            f"ERROR: no manifest.json in {src}\n"
+            f"Run tools/prep_character.py first."
+        )
+
+    return json.loads(manifest_path.read_text())
+
+
+def get_directory_size(path: Path) -> int:
+    return sum(
+        f.stat().st_size
+        for f in path.iterdir()
+        if f.is_file()
+    )
+
+
+def stage_character(src: Path, name: str) -> int:
+    total_size = get_directory_size(src)
+
+    if total_size > LITTLEFS_CAP:
+        sys.exit(
+            f"ERROR: character size {total_size:,} bytes "
+            f"exceeds LittleFS cap of {LITTLEFS_CAP:,} bytes"
+        )
+
+    # Remove old staged characters
+    if DATA_DIR.exists():
+        shutil.rmtree(DATA_DIR)
+
+    dst = DATA_DIR / name
+    shutil.copytree(src, dst)
+
+    print(f"Staged character: {name}")
+    print(f"Size: {total_size:,} bytes")
+    print(f"Destination: {dst}")
+
+    return total_size
+
+
+def erase_flash() -> None:
+    print("\nErasing flash (including LittleFS)...")
+    run(["pio", "run", "-t", "erase"])
+
+
+def upload_filesystem() -> None:
+    print("\nUploading LittleFS image...")
+    run(["pio", "run", "-t", "uploadfs"])
 
 
 def flash(src: Path) -> None:
-    if not (src / "manifest.json").exists():
-        sys.exit(f"no manifest.json in {src} — run tools/prep_character.py first")
-    name = json.loads((src / "manifest.json").read_text())["name"]
+    manifest = get_manifest(src)
+    name = manifest["name"]
 
-    total = sum(f.stat().st_size for f in src.iterdir() if f.is_file())
-    if total > CAP:
-        sys.exit(f"{total:,} bytes — over the {CAP:,} LittleFS cap")
+    stage_character(src, name)
 
-    # uploadfs flashes everything under data/; the firmware only reads one
-    # character at a time, so a stale sibling just wastes partition space.
-    if DATA.exists():
-        shutil.rmtree(DATA)
-    dst = DATA / name
-    shutil.copytree(src, dst)
-    print(f"staged {name}: {total:,} bytes -> {dst}")
+    # Full erase guarantees LittleFS is clean
+    erase_flash()
 
-    subprocess.run(["pio", "run", "-t", "uploadfs"], cwd=PROJECT, check=True)
-    print(f"\nflashed. on the stick: hold A -> settings -> species -> GIF")
+    # Upload filesystem image
+    upload_filesystem()
+
+    print(
+        "\nFlash complete.\n"
+        "On device: hold A -> settings -> species -> GIF"
+    )
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         sys.exit(__doc__)
+
     flash(Path(sys.argv[1]).resolve())

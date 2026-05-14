@@ -1,0 +1,23 @@
+{
+  "name": "clawd",
+  "colors": {
+    "body": "#6B8E23",
+    "bg": "#282828",
+    "text": "#FFFFFF",
+    "textDim": "#808080",
+    "ink": "#000000"
+  },
+  "states": {
+    "sleep": "clawd-sleeping.gif",
+    "idle": [
+      "clawd-idle.gif",
+      "clawd-headphones-groove.gif",
+      "clawd-idle-reading.gif"
+    ],
+    "busy": "clawd-typing.gif",
+    "attention": "clawd-react-double-jump.gif",
+    "celebrate": "clawd-happy.gif",
+    "dizzy": "clawd-thinking.gif",
+    "heart": "clawd-happy.gif"
+  }
+}
