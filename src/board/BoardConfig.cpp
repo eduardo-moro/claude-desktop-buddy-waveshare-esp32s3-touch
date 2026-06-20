@@ -64,6 +64,10 @@ void begin() {
   pinMode(PIN_LCD_BACKLIGHT, OUTPUT);
   digitalWrite(PIN_LCD_BACKLIGHT, LOW);
 
+  Wire.begin(PIN_TOUCH_SDA, PIN_TOUCH_SCL);
+  Wire.setClock(300000);
+  Wire.setTimeOut(10);
+
   Wire1.begin(PIN_I2C_SDA, PIN_I2C_SCL);
   Wire1.setClock(300000);
   Wire1.setTimeOut(10);

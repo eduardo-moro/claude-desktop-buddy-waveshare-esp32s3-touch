@@ -1,11 +1,14 @@
 #pragma once
 #include <stdint.h>
 
-// Colors defined in buddy.cpp, used by stat bar rendering in main.cpp
-extern const uint16_t BUDDY_HEART;
-extern const uint16_t BUDDY_YEL;
-extern const uint16_t BUDDY_GREEN;
-extern const uint16_t BUDDY_RED;
+// Colors defined in buddy.cpp, updated via buddyApplyPalette()
+extern uint16_t BUDDY_HEART;
+extern uint16_t BUDDY_YEL;
+extern uint16_t BUDDY_GREEN;
+extern uint16_t BUDDY_RED;
+
+void buddyApplyPalette(uint16_t bg, uint16_t text, uint16_t textDim,
+                       uint16_t body, uint16_t hot, uint16_t green);
 
 void buddyInit();
 void buddyTick(uint8_t personaState);

@@ -15,17 +15,28 @@ const int BUDDY_Y_OVERLAY = 6;
 const int BUDDY_CHAR_W    = 6;
 const int BUDDY_CHAR_H    = 8;
 
-// ── shared colors — Gruvbox dark (RGB565) ────────────────────────────────────
-const uint16_t BUDDY_BG     = 0x2945;  // #282828 bg
-const uint16_t BUDDY_HEART  = 0xFA46;  // #fb4934 red-dim
-const uint16_t BUDDY_DIM    = 0xACD0;  // #a89984 fg4
-const uint16_t BUDDY_YEL    = 0xFDE5;  // #fabd2f yellow-dim
-const uint16_t BUDDY_WHITE  = 0xEED6;  // #ebdbb2 fg
-const uint16_t BUDDY_CYAN   = 0x8E0F;  // #8ec07c aqua-dim
-const uint16_t BUDDY_GREEN  = 0xBDC4;  // #b8bb26 green-dim
-const uint16_t BUDDY_PURPLE = 0xD433;  // #d3869b purple-dim
-const uint16_t BUDDY_RED    = 0xFA46;  // #fb4934 red-dim
-const uint16_t BUDDY_BLUE   = 0x8533;  // #83a598 blue-dim
+// ── shared colors — updated via buddyApplyPalette() on theme change ──────────
+uint16_t BUDDY_BG     = 0x2945;
+uint16_t BUDDY_HEART  = 0xFA46;
+uint16_t BUDDY_DIM    = 0xACD0;
+uint16_t BUDDY_YEL    = 0xFDE5;
+uint16_t BUDDY_WHITE  = 0xEED6;
+uint16_t BUDDY_CYAN   = 0x8E0F;
+uint16_t BUDDY_GREEN  = 0xBDC4;
+uint16_t BUDDY_PURPLE = 0xD433;
+uint16_t BUDDY_RED    = 0xFA46;
+uint16_t BUDDY_BLUE   = 0x8533;
+
+void buddyApplyPalette(uint16_t bg, uint16_t text, uint16_t textDim,
+                       uint16_t body, uint16_t hot, uint16_t green) {
+  BUDDY_BG    = bg;
+  BUDDY_WHITE = text;
+  BUDDY_DIM   = textDim;
+  BUDDY_YEL   = body;
+  BUDDY_HEART = hot;
+  BUDDY_RED   = hot;
+  BUDDY_GREEN = green;
+}
 
 static uint8_t _scale = 2;
 

@@ -24,6 +24,17 @@ constexpr int DISPLAY_HEIGHT      = 172;
 constexpr int PIN_I2C_SDA   = 47;
 constexpr int PIN_I2C_SCL   = 48;
 
+constexpr int PIN_TOUCH_SDA = 17;
+constexpr int PIN_TOUCH_SCL = 18;
+
+constexpr bool UI_ROTATED_180 = true;
+enum class UiOrientation : uint8_t {
+  Portrait,
+  PortraitFlipped,
+  Landscape,
+  LandscapeFlipped,
+};
+
 constexpr int    TCA9554_ADDRESS           = 0x20;
 constexpr uint8_t TCA9554_PIN_BATTERY_ADC_ENABLE = 1;
 constexpr uint8_t TCA9554_PIN_SYS_EN      = 6;

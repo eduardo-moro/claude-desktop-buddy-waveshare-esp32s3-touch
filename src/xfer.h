@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <LittleFS.h>
-#include "ble_bridge.h"
+#include "wifi_server.h"
 #include <mbedtls/base64.h>
 #include <ArduinoJson.h>
 
@@ -11,14 +11,11 @@ static char     _xCharName[24] = "";
 static bool     _xActive = false;
 static uint32_t _xTotal = 0, _xTotalWritten = 0;
 
-// Ack goes to both streams — we don't track which one delivered the command,
-// and writes to a clientless SerialBT just drop. The bridge listens on
-// whichever port it opened.
 static void _xAck(const char* what, bool ok, uint32_t n = 0) {
   char b[64];
   int len = snprintf(b, sizeof(b), "{\"ack\":\"%s\",\"ok\":%s,\"n\":%lu}\n", what, ok?"true":"false", (unsigned long)n);
   Serial.write(b, len);
-  bleWrite((const uint8_t*)b, len);
+  wifiWrite((const uint8_t*)b, len);
 }
 
 static uint32_t _xWipeDir(const char* dir) {
@@ -93,12 +90,6 @@ inline bool xferCommand(JsonDocument& doc) {
     return true;
   }
 
-  if (strcmp(cmd, "unpair") == 0) {
-    bleClearBonds();
-    _xAck("unpair", true);
-    return true;
-  }
-
   if (strcmp(cmd, "owner") == 0) {
     const char* n = doc["name"];
     if (n) ownerSet(n);
@@ -116,12 +107,12 @@ inline bool xferCommand(JsonDocument& doc) {
     char b[320];
     int len = snprintf(b, sizeof(b),
       "{\"ack\":\"status\",\"ok\":true,\"n\":0,\"data\":{"
-      "\"name\":\"%s\",\"owner\":\"%s\",\"sec\":%s,"
+      "\"name\":\"%s\",\"owner\":\"%s\","
       "\"bat\":{\"pct\":%d,\"mV\":%d,\"mA\":%d,\"usb\":%s},"
       "\"sys\":{\"up\":%lu,\"heap\":%u,\"fsFree\":%lu,\"fsTotal\":%lu},"
       "\"stats\":{\"appr\":%u,\"deny\":%u,\"vel\":%u,\"nap\":%lu,\"lvl\":%u}"
       "}}\n",
-      petName(), ownerName(), bleSecure() ? "true" : "false",
+      petName(), ownerName(),
       pct, vBat, iBat, (vBus > 4000) ? "true" : "false",
       millis() / 1000, ESP.getFreeHeap(),
       (unsigned long)(LittleFS.totalBytes() - LittleFS.usedBytes()),
@@ -130,7 +121,7 @@ inline bool xferCommand(JsonDocument& doc) {
       (unsigned long)stats().napSeconds, stats().level
     );
     Serial.write(b, len);
-    bleWrite((const uint8_t*)b, len);
+    wifiWrite((const uint8_t*)b, len);
     return true;
   }
 
@@ -166,7 +157,7 @@ inline bool xferCommand(JsonDocument& doc) {
         (unsigned long)available, (unsigned long)(_xTotal/1024), (unsigned long)(available/1024)
       );
       Serial.write(b, len);
-      bleWrite((const uint8_t*)b, len);
+      wifiWrite((const uint8_t*)b, len);
       return true;
     }
 
@@ -180,7 +171,15 @@ inline bool xferCommand(JsonDocument& doc) {
     return true;
   }
 
-  if (!_xActive) return strcmp(cmd, "permission") != 0;  // permission cmd is not ours
+  if (!_xActive) {
+    // These commands are handled by _applyJson — don't claim them
+    if (strcmp(cmd, "permission") == 0 ||
+        strcmp(cmd, "media")      == 0 ||
+        strcmp(cmd, "wifi")       == 0 ||
+        strcmp(cmd, "media_ctrl") == 0 ||
+        strcmp(cmd, "palette")    == 0 ) return false;
+    return true;
+  }
 
   if (strcmp(cmd, "file") == 0) {
     const char* path = doc["path"];

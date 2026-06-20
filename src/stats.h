@@ -178,21 +178,20 @@ inline uint8_t statsFedProgress() {
 
 struct Settings {
   bool sound;
-  bool bt;
-  bool wifi;     // placeholder — no WiFi stack linked yet, just stores the pref
+  uint8_t wifiMode; // 0=off 1=sta 2=ap  (WifiMode enum)
   bool led;
   bool hud;
   uint8_t clockRot;  // 0=auto 1=portrait 2=landscape
   uint8_t sleepMins; // screen sleep timeout in minutes (0 = never)
 };
 
-static Settings _settings = { true, true, false, true, true, 0, 1 };
+static Settings _settings = { true, 0, true, true, 0, 1 };
 
 inline void settingsLoad() {
   _prefs.begin("buddy", true);
-  _settings.sound = _prefs.getBool("s_snd", true);
-  _settings.bt    = _prefs.getBool("s_bt",  true);
-  _settings.wifi  = _prefs.getBool("s_wifi",false);
+  _settings.sound    = _prefs.getBool("s_snd",  true);
+  _settings.wifiMode = _prefs.getUChar("s_wfm", 0);
+  if (_settings.wifiMode > 2) _settings.wifiMode = 0;
   _settings.led   = _prefs.getBool("s_led", true);
   _settings.hud      = _prefs.getBool("s_hud", true);
   _settings.clockRot = _prefs.getUChar("s_crot", 0);
@@ -204,10 +203,9 @@ inline void settingsLoad() {
 
 inline void settingsSave() {
   _prefs.begin("buddy", false);
-  _prefs.putBool("s_snd", _settings.sound);
-  _prefs.putBool("s_bt",  _settings.bt);
-  _prefs.putBool("s_wifi",_settings.wifi);
-  _prefs.putBool("s_led", _settings.led);
+  _prefs.putBool("s_snd",  _settings.sound);
+  _prefs.putUChar("s_wfm", _settings.wifiMode);
+  _prefs.putBool("s_led",  _settings.led);
   _prefs.putBool("s_hud", _settings.hud);
   _prefs.putUChar("s_crot", _settings.clockRot);
   _prefs.putUChar("s_slp",  _settings.sleepMins);

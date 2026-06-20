@@ -14,3 +14,4 @@ void characterClose();
 void characterSetPeek(bool peek);
 void characterRenderTo(void* tgt, int cx, int cy);
 const Palette& characterPalette();
+void characterSetBg(uint16_t bg);
